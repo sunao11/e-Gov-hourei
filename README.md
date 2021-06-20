@@ -1,2 +1,3 @@
-# article_qiita
-Articles and codes published in [Qiita](https://qiita.com/) as [@Lisphilar](https://qiita.com/Lisphilar).
+e-Govの法令APIを利用して色々なことを試してみます。
+
+・1つの法令の本文を全てテキストで取り出す。
