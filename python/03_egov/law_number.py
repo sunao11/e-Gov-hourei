@@ -1,4 +1,59 @@
-#!/usr/bin/env python
+import requests
+import xml.etree.ElementTree as ET
+
+#e-Gov 法令API 仕様書
+#https://www.e-gov.go.jp/elaws/pdf/houreiapi_shiyosyo.pdf
+
+#法令選択
+def lawName2No(KEYWORD, TAG='LawName'):
+    url = 'https://elaws.e-gov.go.jp/api/1/lawlists/2'
+    r = requests.get(url)
+    root = ET.fromstring(r.content.decode(encoding='utf-8'))
+    iflag = 0
+    for i,e in enumerate(root.getiterator()):
+        if TAG==e.tag:  
+            iflag = 0
+        if KEYWORD==e.text: 
+            iflag = 1
+        if iflag==1 and e.tag=='LawNo':
+            return  str(e.text)
+
+#法令表示・抽出
+def lawTextExtractor(KEYWORD, lawnum='all', wordn=0, words=[]):
+    if lawnum=='all':
+        url = 'https://elaws.e-gov.go.jp/api/1/lawdata/'+lawName2No(KEYWORD)
+    else:
+        url = 'https://elaws.e-gov.go.jp/api/1/articles;lawNum='+lawName2No(KEYWORD)+';article='+str(lawnum)
+    r = requests.get(url)
+    if r.status_code!=requests.codes.ok:
+        return
+    root = ET.fromstring(r.content.decode(encoding='utf-8')) 
+    lawstrs = []
+    ssentcount = 0
+    for i,e in enumerate(root.getiterator()):
+        for xtag in ['LawTitle', 'SupplProvisionLabel', 'ArticleCaption', 'ArticleTitle', 'ParagraphNum', 'ItemTitle', 'Sentence']:
+            if e.tag==xtag :
+
+                if wordn==1 and xtag=='Sentence':#ワード指定する場合
+                    tmpstr = ''
+                    for word in words:
+                        if str(e.text).find(word)>-1:
+                            if tmpstr=='':
+                                tmpstr = e.text.replace(word, '●'+word)
+                            else:
+                                tmpstr = tmpstr.replace(word, '★'+word)
+                    if tmpstr!='':
+                        lawstrs.append(tmpstr)
+                        ssentcount += 1
+
+                else:
+                    lawstrs.append(str(e.text))
+    if lawstrs==[]:
+        pass
+    else:
+        if lawnum=='all':
+            print('●条項号数', ssentcount)
+        print('\n'.join(lawstrs))#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import codecs
